@@ -1,0 +1,115 @@
+/* General page and body setup */
+html, body {
+  scroll-behavior: smooth;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Container for the registration page */
+.registration-page-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  font-family: 'Montserrat', sans-serif;
+  color: rgba(252, 252, 252, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center; /* Center the form vertically */
+  z-index: 2;
+}
+
+/* Video setup */
+.video video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -1; /* Ensure the video is below all other content */
+}
+
+/* Registration form container */
+.registration-form-container {
+  background-color: rgba(51, 51, 51, 0); /* Completely transparent */
+  padding: 30px;
+  border-radius: 8px;
+  width: 900px;
+  height: auto; /* Allow height to adjust with content */
+  z-index: 2; /* Ensure the form is above the video */
+  text-align: center;
+  animation: fadeInUp 1s ease-in-out;
+  transition: box-shadow 0.3s ease; /* Smooth transition for box-shadow */
+}
+
+/* Title styling */
+.registration-page-title {
+  font-size: 2.5em; /* Adjust size if needed */
+  color: white; /* Title color */
+  letter-spacing: 2px;
+  margin-bottom: 30px; /* Space between title and input form */
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8),  /* White glow */
+               0 0 20px rgba(255, 255, 255, 0.5);  /* Softer white glow */
+}
+
+/* Neon glow effect on hover */
+.registration-form-container:hover {
+  box-shadow: 0 0 20px rgba(81, 45, 168, 1), /* Outer glow */
+              0 0 30px rgba(81, 45, 168, 0.8), 
+              0 0 40px rgba(81, 45, 168, 0.6); /* Multiple layers for a neon effect */
+}
+
+/* Input fields and buttons */
+.registration-form-container input,
+.registration-form-container textarea {
+  width: 100%;
+  padding: 15px;
+  margin-bottom: 15px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background-color: rgba(68, 68, 68, 0.7); /* Slightly transparent background for inputs */
+  color: white; /* Text color */
+}
+
+/* Placeholder text color */
+.registration-form-container input::placeholder,
+.registration-form-container textarea::placeholder {
+  color: white; /* Set placeholder text color to white */
+}
+
+/* Submit button */
+.registration-form-container button {
+  background-color: #5a67d8; /* Button background color */
+  color: white; /* Text color */
+  padding: 15px; /* Padding for better click area */
+  border: none; /* Remove border */
+  border-radius: 5px; /* Rounded corners */
+  font-size: 1em; /* Font size */
+  cursor: pointer; /* Change cursor to pointer on hover */
+  transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transition for background color and scaling */
+}
+
+.registration-form-container button:hover {
+  background-color: #5a67d8; /* Darker shade on hover */
+  transform: scale(1.05); /* Slightly increase size on hover */
+}
+
+/* Styling for success message */
+.success-message {
+  color: white;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+/* Optional: Add some entrance animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

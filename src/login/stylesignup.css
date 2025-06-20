@@ -1,0 +1,361 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Montserrat', sans-serif;
+}
+
+/* Body Styling */
+body {
+    overflow: hidden;
+    position: relative;
+    height: 100vh;
+}
+
+/* Container Styling */
+.form-wrapper {
+    justify-items: center;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 5%;
+    background-color: #444444; /* Slightly lighter than the background */
+    border-radius: 30px;
+    position: relative;
+    overflow: hidden;
+    width: 768px;
+    max-width: 100%;
+    min-height: 480px;
+    z-index: 10; /* Ensure it is above the animation */
+}
+
+.form-wrapper input[type="email"],
+.form-wrapper input[type="password"] {
+    color: rgb(255, 255, 255) !important; /* Ensure the text color is red */
+    background-color: #555555; /* Keep the existing background */
+}
+
+/* Placeholder Styling */
+.form-wrapper input::placeholder {
+    color: rgb(255, 255, 255); /* Set placeholder color to red */
+    opacity: 1; /* Ensures full opacity for better visibility */
+}
+
+/* Form Styling */
+.form-wrapper form {
+    background-color: #444444; /* Form background to match container */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 0 40px;
+    height: 100%;
+}
+
+.form-wrapper input {
+    background-color: #555555; /* Darker input fields */
+    border: none;
+    margin: 8px 0;
+    padding: 10px 15px;
+    font-size: 13px;
+    border-radius: 8px;
+    width: 100%;
+    color: #FFFFFF; /* White text inside inputs */
+}
+
+/* Animation Elements */
+.shape {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    z-index: 1; /* Ensures animation elements are layered properly */
+}
+
+.square {
+    background: linear-gradient(#303030, #757575);
+}
+
+.circle {
+    background: #0cdceb;
+    border-radius: 50%;
+}
+
+.triangle {
+    background: #f5f5f5;
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    -webkit-clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+/* Animation Background Cover */
+.animation-background {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0; /* Behind everything else */
+    animation: circularAnimation 20s infinite; /* Adjust duration as needed */
+}
+
+@keyframes circularAnimation {
+    0% {
+        transform: translate(0, 0);
+        opacity: 50%;
+    }
+    25% {
+        transform: translate(15px, 15px) rotate(90deg);
+        opacity: 75%;
+    }
+    50% {
+        transform: translate(0, 30px) rotate(140deg);
+    }
+    75% {
+        transform: translate(-15px, 15px) rotate(90deg);
+        opacity: 75%;
+    }
+    100% {
+        transform: translate(0, 0);
+        opacity: 50%;
+    }
+}
+
+/* Other Container Styling */
+.form-wrapper p,
+.form-wrapper span,
+.form-wrapper a {
+    color: #FFFFFF; /* White text */
+}
+
+.form-wrapper p {
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0.3px;
+    margin: 20px 0;
+}
+
+.form-wrapper span {
+    font-size: 12px;
+}
+
+.form-wrapper a {
+    font-size: 13px;
+    text-decoration: none;
+    margin: 15px 0 10px;
+}
+
+.form-wrapper button {
+    background-color: #512DA8; /* Accent color */
+    color: #fff;
+    font-size: 12px;
+    padding: 10px 45px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+.form-wrapper button.hidden {
+    background-color: transparent;
+    border-color: #fff;
+}
+
+.form-section {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    transition: all 0.6s ease-in-out;
+}
+
+.sign-in {
+    left: 0;
+    width: 50%;
+    z-index: 2;
+}
+
+.form-wrapper.active .sign-in {
+    transform: translateX(100%);
+}
+
+.sign-up {
+    left: 0;
+    width: 50%;
+    opacity: 0;
+    z-index: 1;
+}
+
+.form-wrapper.active .sign-up {
+    transform: translateX(100%);
+    opacity: 1;
+    z-index: 5;
+    animation: move 0.6s;
+}
+
+@keyframes move {
+    0%,
+    49.99% {
+        opacity: 0;
+        z-index: 1;
+    }
+    50%,
+    100% {
+        opacity: 1;
+        z-index: 5;
+    }
+}
+
+.social-icons {
+    margin: 20px 0;
+}
+
+.social-icons a {
+    border: 1px solid #555555; /* Adjusting border color to darker shade */
+    border-radius: 20%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 3px;
+    width: 40px;
+    height: 40px;
+    color: #fff; /* White icons */
+}
+
+.toggle-wrapper {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 50%;
+    height: 100%;
+    overflow: hidden;
+    transition: all 0.6s ease-in-out;
+    border-radius: 150px 0 0 100px;
+    z-index: 1000;
+}
+
+.form-wrapper.active .toggle-wrapper {
+    transform: translateX(-100%);
+    border-radius: 0 150px 100px 0;
+}
+
+.toggle {
+    background-color: #512DA8;
+    height: 100%;
+    background: linear-gradient(to right, #663fa4, #512DA8); /* Gradient accent color */
+    color: #fff;
+    position: relative;
+    left: -100%;
+    height: 100%;
+    width: 200%;
+    transform: translateX(0);
+    transition: all 0.6s ease-in-out;
+}
+
+.form-wrapper.active .toggle {
+    transform: translateX(50%);
+}
+
+.toggle-panel {
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 0 30px;
+    text-align: center;
+    top: 0;
+    transform: translateX(0);
+    transition: all 0.6s ease-in-out;
+}
+
+.toggle-left {
+    transform: translateX(-200%);
+}
+
+.form-wrapper.active .toggle-left {
+    transform: translateX(0);
+}
+
+.toggle-right {
+    right: 0;
+    transform: translateX(0);
+}
+
+.form-wrapper.active .toggle-right {
+    transform: translateX(200%);
+}
+
+.sign-in,
+.sign-up {
+    color: #FFFFFF; /* Set text color to white */
+}
+
+/* Additional specific styling to ensure all text remains white */
+.sign-in h2,
+.sign-up h2 {
+    color: #FFFFFF; /* White text for headings */
+}
+
+.sign-in p,
+.sign-up p {
+    color: #FFFFFF; /* White text for paragraphs */
+}
+
+.sign-in a,
+.sign-up a {
+    color: #FFFFFF; /* White text for links */
+}
+
+/* Add margin to the span under 'Create Account' */
+.sign-up span,
+.sign-in span {
+    display: block;
+    margin-top: 10px; /* Add space above the text */
+    margin-bottom: 20px; /* Add space below the text */
+}
+
+button:hover {
+    border-color: #646cff;
+}
+
+button:focus,
+button:focus-visible {
+    outline: 4px auto -webkit-focus-ring-color;
+}
+
+.error-message {
+    color: red; /* Red color for error messages */
+    font-size: 0.9rem; /* Slightly smaller font size */
+    margin-bottom: 10px; /* Space below the message */
+}
+
+.logo-signin {
+    width: 200px;
+    height: auto; /* Maintain aspect ratio */
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 2%; /* Adjust as needed */
+    margin-bottom: 0; /* Reduce or remove gap below the logo */
+}
+.form-error {
+    color: red;
+    font-weight: bold;
+    margin-bottom: 1em;
+    text-align: center;
+  }
+  
+  .forgot-password-text {
+    color: #007bff; /* Link color */
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  
+  .forgot-password-text:hover {
+    color: #110a5b; /* Darker color on hover */
+  }
+  

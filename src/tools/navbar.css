@@ -1,0 +1,81 @@
+@import url("https://fonts.googleapis.com/css?family=Montserrat");
+
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(48, 48, 48, 0.2); /* Light transparent background */
+    padding: 10px;
+    z-index: 20;
+    display: flex;
+    align-items: center; /* Aligns items vertically in the center */
+}
+
+.virtual-Logo {
+    width: 200px; 
+    height: auto; /* Maintain aspect ratio */
+    padding-left: 100px; 
+}
+
+.navbar-heading {
+    font-family: "Montserrat", sans-serif;
+    color: #ab49de;
+    text-transform: uppercase;
+    font-size: 2rem;
+    user-select: none;
+    flex: 1; /* Allows it to grow and take available space */
+    text-align: center; /* Centers the text within its own space */
+}
+
+.navbar-bar {
+    display: flex; /* Ensures that the list items are displayed in a row */
+    margin-left: auto; /* Pushes the links to the right */
+}
+
+.navbar-list-item {
+    margin-left: 20px; /* Adds space between list items */
+    list-style: none; /* Removes bullet points */
+}
+
+.navbar-link {
+    text-decoration: none;
+    text-transform: uppercase;
+    display: block;
+    padding: 0.5em 2em;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #d1c3f2; /* Lightened color */
+    transition: color 0.3s, transform 0.3s;
+}
+
+.navbar-link:hover {
+    color: #ab49de; /* Purple color */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.logout-button {
+    background-color: #ab49de; /* Use the same purple as the navbar link hover */
+    color: white; /* White text for contrast */
+    border: none; /* Remove the default border */
+    padding: 0.5em 1.5em; /* Padding to match the navbar links */
+    font-size: 1rem; /* Match the font size of navbar links */
+    font-weight: 700; /* Bold text for emphasis */
+    cursor: pointer; /* Pointer cursor on hover */
+    border-radius: 5px; /* Rounded corners for a modern look */
+    transition: background-color 0.3s, transform 0.3s; /* Smooth transition */
+    margin-left: 20px; /* Space from the right */
+}
+
+.logout-button:hover {
+    background-color: #d1c3f2; /* Lighten the button on hover */
+    color: #ab49de; /* Change text color on hover */
+    transform: translateY(-2px); /* Lift effect on hover */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Add shadow effect */
+}
+.user-greetings{
+    text-decoration: solid;
+    text-shadow: #ffffff;
+    color: #ffffff;
+}

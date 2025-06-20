@@ -1,0 +1,281 @@
+/* General Reset */
+body {
+    font-family: 'Montserrat', sans-serif;
+    overflow-x: hidden;
+    margin: 0; /* Ensure no default margin */
+    padding: 0; /* Ensure no default padding */
+}
+
+/* Background Video (if needed) */
+.background-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1;
+}
+
+/* Overlay Image Styling */
+.overlay-image {
+    position: fixed; /* Keep it fixed so it stays in front of the video */
+    top: 50%; /* Center vertically */
+    left: 50%; /* Center horizontally */
+    transform: translate(-50%, -50%); /* Adjust position to truly center */
+    width: 400px; /* Set desired larger width (adjust as needed) */
+    height: auto; /* Maintain aspect ratio */
+    z-index: 1; /* Set z-index to ensure it is in front of the video */
+    animation: rotate 10s linear infinite; /* Rotate animation */
+}
+
+/* Rotate Animation */
+@keyframes rotate {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg); /* Start rotation */
+    }
+    to {
+        transform: translate(-50%, -50%) rotate(360deg); /* Complete one full rotation */
+    }
+}
+
+/* Hero Section */
+.hero-section {
+    position: relative; /* To position child elements absolutely */
+    text-align: center;
+    padding: 100px 20px;
+    color: #fff;
+    overflow: hidden; /* Hide overflowing elements like moving car */
+}
+
+/* Hero Section Title */
+.hero-section h1 {
+    margin-top: 20px;
+    font-size: 4rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 0 10px #512DA8, 0 0 20px #512DA8, 0 0 30px #512DA8;
+    letter-spacing: 5px; /* Increased letter spacing */
+    text-transform: uppercase;
+}
+
+/* Tagline Text Styling */
+.hero-section p {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 2.0rem;
+    font-weight: 400;
+    color: #726b6b;
+    margin-top: 0px;
+    letter-spacing: 1px;
+}
+
+/* Steering Wheel Image Styles */
+.steering-wheel-image {
+    width: 600px; /* Increase size as needed */
+    height: auto; /* Maintain aspect ratio */
+    position: absolute; /* Position it relative to the hero section */
+    top: 40%; /* Center vertically */
+    left: 50%; /* Center horizontally */
+    transform: translate(-50%, -50%); /* Adjust position to truly center */
+    z-index: -1; /* Ensure it stays behind the text */
+    animation: rotate 10s linear infinite; /* Rotate animation */
+}
+
+/* Car Image */
+.car-image {
+    position: absolute; /* Position it absolutely */
+    right: -600px; /* Start from outside the right side of the screen */
+    top: 70%; /* Adjust vertical position as needed */
+    transform: translateY(-50%); /* Adjust to truly center */
+    width: 600px; /* Set width for the car image */
+    height: auto; /* Maintain aspect ratio */
+    animation: drive 20s linear infinite; /* Animate movement */
+}
+
+
+/* Card Container */
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; /* Center the cards horizontally */
+    padding: 0px 20px;
+}
+
+
+
+/* Wavy Water-Like Gradient Animation */
+@keyframes waterWave {
+    0% {
+        background-position: 0% 50%; /* Start from the left center */
+    }
+    25% {
+        background-position: 50% 55%; /* Shift diagonally */
+    }
+    50% {
+        background-position: 100% 50%; /* Move to the right */
+    }
+    75% {
+        background-position: 50% 45%; /* Shift diagonally again */
+    }
+    100% {
+        background-position: 0% 50%; /* Return to start */
+    }
+}
+
+
+/* Card Styling with Breathing Effect */
+.card {
+    background-size: cover;
+    animation: float 5s ease-in-out infinite; /* Apply breathe animation */
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+    margin: 50px;
+    width: 350px;
+    height: 350px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 8px;
+    justify-content: space-between;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-10px) scale(1.05); /* Slight pop-up effect on hover */
+    box-shadow: 0 10px 30px rgba(81, 45, 168, 0.6);
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-30px); /* Move slightly up */
+    }
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+/* Card Title */
+.h2-container h2 {
+    font-size: 1.8rem;
+    color: #EDE7F6;
+    margin-top: 20px;
+    margin: 100px 0 10px 0;
+    text-transform: uppercase;
+    text-align: center;
+    text-shadow: 0 0 5px #512DA8;
+}
+
+/* Action Button Styles */
+.action-button, .explore-button {
+    padding: 10px 20px;
+    text-transform: uppercase;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #ffffff;
+    text-shadow: none;
+    background: transparent;
+    cursor: pointer;
+    box-shadow: transparent;
+    border: 1px solid #ffffff;
+    transition: 0.5s ease;
+    user-select: none;
+    margin-bottom: 20px;
+}
+
+.action-button:hover,
+.action-button:focus {
+    color: #ffffff;
+    background: #512DA8;
+    border: 1px solid #512DA8;
+    text-shadow: 0 0 3px #ffffff, 0 0 6px #ffffff, 0 0 12px #ffffff;
+}
+
+/* Info Section */
+.info-section {
+    padding: 80px 60px; /* Increased padding for better spacing */
+    text-align: left;
+}
+
+.info-section h2 {
+    font-size: 4rem; /* Increased font size for heading */
+    margin-bottom: 30px; /* Increased spacing below heading */
+    color: #EDE7F6;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(81, 45, 168, 0.8), 0 0 20px rgba(81, 45, 168, 0.6);
+    text-align: center; /* Center the heading */
+}
+
+/* Info Item Styles */
+.info-item {
+    display: flex; /* Use flexbox for alignment */
+    align-items: center; /* Align items vertically */
+    margin-bottom: 80px; /* Increased space between each info item */
+    flex-wrap: wrap; /* Ensure responsiveness */
+}
+
+.info-item:nth-child(even) {
+    flex-direction: row-reverse; /* Alternate image and text for visual variety */
+}
+
+.info-image {
+    width: 100%; /* Take full width on smaller screens */
+    max-width: 250px; /* Adjust the maximum width to your preference */
+    height: auto; /* Maintain aspect ratio */
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.8); /* White glow effect */
+    transition: box-shadow 0.3s ease; /* Smooth transition */
+    border-radius: 10px; /* Rounded corners */
+    margin: 20px; /* Space around images */
+}
+
+.info-image:hover {
+    box-shadow: 0 0 25px rgb(255, 255, 255); /* Enhanced glow on hover */
+}
+
+.info-text {
+    flex: 1;
+    padding: 50px;
+    color: #EDE7F6;
+}
+
+.h3-container h3 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    text-shadow: 0 0 5px #512DA8;
+}
+
+.p-container p {
+    margin-top: 20px; 
+    font-size: 1.5rem;
+    color: #cccccc;
+}
+
+/* Learn More Button Styles */
+.learn-more-button {
+    padding: 10px 20px;
+    text-transform: uppercase;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #ffffff80;
+    text-shadow: none;
+    background: transparent;
+    cursor: pointer;
+    box-shadow: transparent;
+    border: 1px solid #ffffff80;
+    transition: 0.5s ease;
+    user-select: none;
+}
+
+.learn-more-button:hover,
+.learn-more-button:focus {
+    color: #ffffff;
+    background: #512DA8;
+    border: 1px solid #512DA8;
+    text-shadow: 0 0 3px #ffffff, 0 0 6px #ffffff, 0 0 12px #ffffff;
+}
+

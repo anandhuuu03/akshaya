@@ -1,0 +1,111 @@
+/* Basic page styling */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #f0f0f0; /* Light text for better contrast */
+}
+
+/* Mock Test container */
+.mock-test-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center items horizontally */
+    justify-content: center; /* Center items vertically */
+    height: 100vh; /* Full viewport height */
+    position: relative; /* Set relative positioning for child elements */
+    overflow: hidden; /* Hide overflow */
+}
+
+/* Background video styling */
+.background-video {
+    position: absolute; /* Position video absolutely */
+    top: 0; /* Align to the top */
+    left: 0; /* Align to the left */
+    width: 100%; /* Full width of the container */
+    height: 100%; /* Full height of the container */
+    object-fit: cover; /* Cover the entire container */
+    z-index: -2; /* Send the video to the back */
+}
+
+/* Mock Test heading styling */
+.mock-test-heading {
+    position: relative; /* Ensure it’s on top of the video */
+    z-index: 1; /* Ensure heading appears above video */
+    margin: 20px 0; /* Margin around the heading */
+    font-size: 4em; /* Make the font size bigger */
+    color: #ffffff; /* White color for text */
+    text-shadow: 0 0 10px #a64ac9, 0 0 20px #a64ac9; /* Purple glowing effect */
+    animation: glow 1.5s infinite alternate; /* Fading glow animation */
+    text-align: center; /* Center the heading */
+}
+
+/* Animation keyframes for fading glow */
+@keyframes glow {
+    0% {
+        text-shadow: 0 0 10px #a64ac9, 0 0 20px #a64ac9; /* Initial purple glow */
+    }
+    100% {
+        text-shadow: 0 0 20px #a64ac9, 0 0 30px #a64ac9; /* Enhanced purple glow */
+    }
+}
+
+/* Button container */
+.button-container {
+    display: flex;
+    flex-direction: column; /* Stack buttons vertically */
+    margin-top: 20px; /* Space above buttons */
+    z-index: 1; /* Ensure buttons appear above video */
+}
+
+/* Button comment styling */
+.button-comment {
+    text-align: center; /* Center the comment text */
+    margin-bottom: 5px; /* Space between comment and button */
+}
+
+/* Button styling */
+.btn {
+    background-color: #000; /* Black background for buttons */
+    color: #fff; /* White text for better contrast */
+    padding: 10px 20px; /* Padding for buttons */
+    margin: 10px 0; /* Space between buttons */
+    border: none; /* No border by default */
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+    font-size: 16px; /* Font size */
+    transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+/* Specific button border styles */
+.test-btn {
+    border: 2px solid rgb(53, 175, 5); /* Green border for Test button */
+    padding: 15px 30px; /* Increased padding for Test button */
+    font-size: 20px; /* Increased font size for Test button */
+}
+
+.result-btn {
+    border: 2px solid orange; /* Orange border for Result button */
+}
+
+.feedback-btn {
+    border: 2px solid red; /* Red border for Feedback button */
+}
+
+/* Hover effect for buttons */
+.btn:hover {
+    background-color: #0a0a0a; /* Darker background on hover */
+}
+
+/* Glowing effect on hover */
+.test-btn:hover {
+    box-shadow: 0 0 15px green; /* Green glow for Test button */
+}
+
+.result-btn:hover {
+    box-shadow: 0 0 15px orange; /* Orange glow for Result button */
+}
+
+.feedback-btn:hover {
+    box-shadow: 0 0 15px red; /* Red glow for Feedback button */
+}

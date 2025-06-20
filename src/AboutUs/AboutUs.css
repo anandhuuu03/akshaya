@@ -1,0 +1,156 @@
+/* Styles for About Us Component */
+/* Add smooth scrolling to the page */
+body {
+    scroll-behavior: smooth;
+    overflow-y: auto;
+  }
+
+.about-us-container {
+    height: 100%; /* Ensure the container takes full height */
+    margin: 0;
+    font-family: 'Montserrat', sans-serif;
+    color: rgba(252, 252, 252, 0.7);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Minimum height to ensure it covers the viewport */
+    scroll-behavior: smooth;
+    animation: fadeIn 1.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.about-us-title {
+    text-align: center;
+    font-size: 4em;
+    margin: 100px 0;
+    color: rgba(252, 252, 252, 0.9);
+    animation: slideInFromLeft 1.2s ease-in-out;
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.section {
+    margin: 50px;
+    padding: 20px;
+    background-color: #333333;
+    border-radius: 8px;
+    animation: fadeInUp 1s ease-in-out;
+    transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.section:hover {
+    background-color: #4444;
+    box-shadow: 0 0 20px rgba(81, 45, 168, 1), 
+                0 0 40px rgba(81, 45, 168, 0.8), 
+                0 0 60px rgba(81, 45, 168, 0.6);
+}
+
+.section-title {
+    font-size: 3em;
+    margin-bottom: 20px;
+    font-weight: 600;
+    color: rgba(252, 252, 252, 0.9);
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.section-title:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.contact-us {
+    margin-top: 40px;
+    animation: fadeIn 1.2s ease-in-out;
+}
+
+.contact-info {
+    margin-bottom: 30px;
+}
+
+.contact-info p {
+    margin: 8px 0;
+}
+
+.paragraph-container {
+    margin-bottom: 20px; /* Space between paragraphs */
+    font-size: 1.2em; /* Adjust the size of the text here */
+}
+
+.message-container input,
+.message-container textarea {
+    width: 100%; /* Full width for better responsiveness */
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background-color: #444;
+    color: #fff;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.message-container input::placeholder,
+.message-container textarea::placeholder {
+    font-size: 18px;
+    color: rgba(150, 150, 150, 0.7);
+}
+
+/* Styling for the success message */
+.success-message {
+    color: green;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+
+.message-container input:focus,
+.message-container textarea:focus {
+    background-color: #444;
+    border-color: #555;
+    outline: none;
+}
+
+.message-container textarea {
+    height: 120px; /* Provide more space for textarea */
+}
+
+.message-container button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    background-color: #512DA8;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.message-container button:hover {
+    background-color: #3e1e85;
+    transform: scale(1.05);
+}
+
+.success-message {
+    margin-top: 20px;
+    color: #ffffff;
+    font-size: 1.2em;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+}
+
+.section-title .svg-inline--fa {
+    margin-right: 8px; /* Space between icon and text */
+}

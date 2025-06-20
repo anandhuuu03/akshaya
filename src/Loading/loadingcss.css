@@ -1,0 +1,26 @@
+/* Container to center the spinner */
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+    background-color: #1e1e1e; /* Optional background for a dark theme */
+}
+
+/* Spinner styles */
+.loading-spinner {
+    width: 100px;
+    height: 100px;
+    border: 8px solid rgba(0, 0, 0, 0.1); /* Faint border */
+    border-top: 8px solid #512DA8; /* Main color */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    box-shadow: 0 0 15px #512DA8, 0 0 10px #512DA8; /* Neon glow */
+}
+
+/* Keyframes for spinning animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

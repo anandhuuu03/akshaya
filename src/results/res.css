@@ -1,0 +1,263 @@
+/* General Theme Colors */
+:root {
+  --background-dark: #1d1c1f;
+  --background-light: #2c2930;
+  --accent-color: #8b1db6;
+  --accent-hover: #5e117e;
+  --text-light: #ffffff;
+  --border-color: #35313e;
+  --heading-font: 'Arial', sans-serif;
+  --body-font: 'Arial', sans-serif;
+}
+
+/* Container for overall layout */
+.result-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--background-dark);
+  padding: 60px 40px;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* Background Animation Container */
+.animation-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Animated Circles */
+.moving-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(139, 29, 182, 0.8);
+  animation: move 10s infinite alternate;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3), 
+              inset 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+/* Keyframes for Circle Movement */
+@keyframes move {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(100vw - 50px), calc(100vh - 50px)) scale(1.1);
+    opacity: 0.5;
+  }
+}
+
+/* Positioning circles randomly with smaller size */
+.circle1 {
+  width: 60px;
+  height: 60px;
+  top: 20%;
+  left: 10%;
+  animation-duration: 8s; 
+}
+
+.circle2 {
+  width: 80px;
+  height: 80px;
+  top: 50%;
+  left: 25%;
+  animation-duration: 12s; 
+}
+
+.circle3 {
+  width: 100px;
+  height: 100px;
+  top: 70%;
+  left: 60%;
+  animation-duration: 10s;
+}
+
+.circle4 {
+  width: 70px;
+  height: 70px;
+  top: 80%;
+  left: 80%;
+  animation-duration: 14s;
+}
+
+.circle5 {
+  width: 90px;
+  height: 90px;
+  top: 30%;
+  left: 50%;
+  animation-duration: 9s;
+}
+
+/* Main heading style */
+.result-heading {
+  font-size: 60px;
+  margin-top: 40px;
+  margin-bottom: 30px;
+  color: #c4acf9;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+}
+
+
+/* Subheading style */
+.sub-heading {
+  font-size: 25px;
+  margin-bottom: 3px;
+  color: #d9a6e3;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Test details container */
+.test-details-box {
+  background-color: var(--background-light);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 600px;
+  width: 90%;
+  margin: 20px auto;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+  max-height: 300px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Each test item style */
+.test-item {
+  background-color: var(--background-dark);
+  color: var(--text-light);
+  padding: 15px 30px;
+  margin: 10px 0;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  text-align: center;
+  width: 90%;
+}
+
+/* Hover effect for test items */
+.test-item:hover {
+  background-color: var(--accent-color);
+  transform: translateY(-5px);
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+/* Modal Content */
+.modal-content {
+  background-color: var(--background-light);
+  padding: 30px 40px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  animation: slideDown 0.3s ease-out forwards;
+}
+
+/* Slide down animation for modal */
+@keyframes slideDown {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Result message style */
+.result-message {
+  font-size: 22px;
+  margin-bottom: 10px;
+  color: var(--text-light);
+}
+
+/* Paragraph style for score */
+.modal-content p {
+  font-size: 18px;
+  margin-bottom: 20px;
+  color: var(--text-light);
+}
+
+/* Retry button style */
+.retry-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: var(--accent-color);
+  color: var(--text-light);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+/* Hover effect for retry button */
+.retry-button:hover {
+  background-color: var(--accent-hover);
+  transform: scale(1.05);
+}
+
+/* Close button style */
+.close-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #d32f2f;
+  color: var(--text-light);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+/* Hover effect for close button */
+.close-button:hover {
+  background-color: #9a1c1c;
+  transform: scale(1.05);
+}
+
+.back-button {
+  font-size: 18px; /* Increases font size for better readability */
+  padding: 5px 12px; /* Adjust padding for a more comfortable click area */
+  background-color: transparent;
+  color: #4c65f2; /* New color for better visibility */
+  border: none;
+  cursor: pointer;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-weight: 600; /* Makes the text slightly bolder */
+  z-index: 1000; /* A high z-index to bring it to the front */
+  position: relative; /* Ensure z-index applies */
+  margin-top: 40px;
+}
+
+.back-button:hover {
+  color: #3b4fb5; /* Slightly darker shade on hover for a subtle effect */
+}
