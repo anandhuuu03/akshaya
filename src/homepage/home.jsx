@@ -22,6 +22,8 @@ const Homepage = () => {
 
     // Bank operations
     opening_bank_balance: "",
+    opening_cash_balance: "",
+    opening_wallet_balance: "",
     deposit_amount: "",
     deposit_mode: "cash",
 
@@ -108,6 +110,8 @@ const Homepage = () => {
         // Opening bank balance
         opening_bank_balance: Number(form.opening_bank_balance) || 0,
         opening_cash_balance: Number(form.opening_cash_balance) || 0,
+        opening_wallet_balance: Number(form.opening_wallet_balance) || 0,
+
 
         // Revenue fields based on service type
         ...(form.service_type === "direct"
@@ -174,7 +178,7 @@ const Homepage = () => {
         receive_mode: "cash",
         give_amount: "",
         give_mode: "cash",
-        opening_cash_balance: "",
+        
       });
 
       setShowBankBalance(false);
@@ -279,6 +283,7 @@ const bankBalance =
   openingBalance +
   gpayDeposited +
   directRevenueGpay +
+  cashDeposited +
   serviceFeesGpay -
   thirdpartyGpay -
   gpayExpenses -
@@ -292,7 +297,10 @@ const cashInHand =
   cashDeposited -
   thirdpartyCash;
 
-const walletBalance = walletTopup - portalUsed;
+const openingWallet = Number(selectedEntries[0]?.opening_wallet_balance || 0); // ✅
+
+const walletBalance = openingWallet + walletTopup - portalUsed; // ✅ Include opening
+
 
 // ✅ Pending
 const pendingReceive = selectedEntries.reduce(
@@ -487,33 +495,48 @@ const pendingGive = selectedEntries.reduce(
 
           {/* Opening Bank Balance (show only for first entry of day) */}
           {showBankBalance && (
-            <div>
-              <label className="block text-sm font-medium mb-1 text-blue-700">
-                🏦 Opening Bank Balance
-              </label>
-              <input
-                type="number"
-                name="opening_bank_balance"
-                value={form.opening_bank_balance}
-                onChange={handleInputChange}
-                placeholder="₹"
-                className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          )}
-          <div className="mb-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Opening Cash Balance
-            </label>
-            <input
-              type="number"
-              name="opening_cash_balance"
-              value={form.opening_cash_balance || ""}
-              onChange={handleInputChange}
-              className="mt-1 block w-full p-2 border rounded"
-              placeholder="e.g., 500"
-            />
-          </div>
+  <>
+    {/* Opening Bank Balance Input */}
+    <div className="mb-4">
+      <label className="block text-sm font-medium mb-1">🏦 Opening Bank Balance</label>
+      <input
+        type="number"
+        name="opening_bank_balance"
+        value={form.opening_bank_balance}
+        onChange={handleInputChange}
+        className="w-full border rounded px-3 py-2"
+        placeholder="Enter bank balance"
+      />
+    </div>
+
+    {/* Opening Cash Balance Input */}
+    <div className="mb-4">
+      <label className="block text-sm font-medium mb-1">💵 Opening Cash Balance</label>
+      <input
+        type="number"
+        name="opening_cash_balance"
+        value={form.opening_cash_balance}
+        onChange={handleInputChange}
+        className="w-full border rounded px-3 py-2"
+        placeholder="Enter cash in hand"
+      />
+    </div>
+
+    {/* ✅ New: Opening Wallet Balance Input */}
+    <div className="mb-4">
+      <label className="block text-sm font-medium mb-1">💳 Opening Wallet Balance</label>
+      <input
+        type="number"
+        name="opening_wallet_balance"
+        value={form.opening_wallet_balance}
+        onChange={handleInputChange}
+        className="w-full border rounded px-3 py-2"
+        placeholder="Enter wallet balance"
+      />
+    </div>
+  </>
+)}
+
 
           {/* Bank Deposit */}
           <div>
