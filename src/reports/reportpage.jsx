@@ -1,72 +1,169 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, AlertTriangle, CheckCircle, XCircle, FileText, Download, Edit3, Trash2 } from 'lucide-react';
-import PocketBase from 'pocketbase';
 
+// Mock PocketBase for demonstration - replace with actual PocketBase import
+import PocketBase from 'pocketbase';
 const pb = new PocketBase('https://virtualdrive.pockethost.io');
 
 const DailyReport = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [dailyEntries, setDailyEntries] = useState([]);
+  const [form, setForm] = useState({ entry_date: new Date().toISOString().split('T')[0] });
+  const [entries, setEntries] = useState([]);
   const [dailyNotes, setDailyNotes] = useState('');
   const [editingEntry, setEditingEntry] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchDataForDate();
-  }, [selectedDate]);
+  }, [form.entry_date]);
 
   const fetchDataForDate = async () => {
     setLoading(true);
     try {
       const res = await pb.collection('daily_entries').getFullList({
-        sort: 'entry_date',
-        filter: `entry_date >= "${selectedDate} 00:00:00" && entry_date <= "${selectedDate} 23:59:59"`
+        sort: 'created',
+        filter: `entry_date >= "${form.entry_date} 00:00:00" && entry_date <= "${form.entry_date} 23:59:59"`
       });
-      setDailyEntries(res);
+      setEntries(res);
     } catch (error) {
       console.error('Error fetching data:', error);
-      setDailyEntries([]);
+      setEntries([]);
     }
     setLoading(false);
   };
 
-  // Calculation functions
-  const sum = (field) => dailyEntries.reduce((total, entry) => total + Number(entry[field] || 0), 0);
-  
-  const cashDeposited = sum('deposit_cash');
-  const gpayDeposited = sum('deposit_gpay');
-  const cashCollected = sum('credited_cash');
-  const gpayCollected = sum('credited_gpay');
-  const walletTopup = sum('ed_wallet_gpay');
-  const portalUsed = sum('portal_gpay');
+  // Get selected date entries sorted chronologically
+  const selectedDate = form.entry_date;
+  const selectedEntries = entries
+    .filter((e) => e.entry_date?.startsWith(selectedDate))
+    .sort((a, b) => new Date(a.created) - new Date(b.created));
 
-  // Expense calculations
-  const cashExpenses = sum('expense_self_cash') + sum('expense_staff_cash') + sum('expense_enterprise_cash') + sum('expense_misc_cash');
-  const gpayExpenses = sum('expense_self_gpay') + sum('expense_staff_gpay') + sum('expense_enterprise_gpay') + sum('expense_misc_gpay');
+  // Opening Balances
+  const openingBalance = Number(selectedEntries[0]?.opening_bank_balance || 0);
+  const openingCash = Number(selectedEntries[0]?.opening_cash_balance || 0);
+
+  // ✅ Total direct service revenue (as before)
+  const directRevenueCash = selectedEntries.reduce(
+    (sum, e) => sum + Number(e.credited_cash || 0),
+    0
+  );
+  const directRevenueGpay = selectedEntries.reduce(
+    (sum, e) => sum + Number(e.credited_gpay || 0),
+    0
+  );
+
+  // ✅ Total third-party revenue collected from customer (this is now FULL amount received)
+  const serviceFeesCash = selectedEntries.reduce(
+    (sum, e) => sum + Number(e.thirdparty_fee_cash || 0),
+    0
+  );
+  const serviceFeesGpay = selectedEntries.reduce(
+    (sum, e) => sum + Number(e.thirdparty_fee_gpay || 0),
+    0
+  );
+
+  // ✅ Total revenue is now full amount received from customer
+  const totalRevenue =
+    directRevenueCash + directRevenueGpay + serviceFeesCash + serviceFeesGpay;
+
+  // ✅ Third-party amount paid out from bank via GPay
+  const thirdpartyCash = selectedEntries.reduce(
+    (sum, e) => sum + Number(e.thirdparty_paid_cash || 0),
+    0
+  );
+  const thirdpartyGpay = selectedEntries.reduce(
+    (sum, e) => sum + Number(e.thirdparty_paid_gpay || 0),
+    0
+  );
+  const totalThirdparty = thirdpartyCash + thirdpartyGpay;
+
+  // ✅ Deposits
+  const cashDeposited = selectedEntries.reduce(
+    (sum, e) => sum + Number(e.deposit_cash || 0),
+    0
+  );
+  const gpayDeposited = selectedEntries.reduce(
+    (sum, e) => sum + Number(e.deposit_gpay || 0),
+    0
+  );
+  const totalDeposits = cashDeposited + gpayDeposited;
+
+  // ✅ Expenses
+  const cashExpenses = selectedEntries.reduce(
+    (sum, e) =>
+      sum +
+      Number(e.expense_self_cash || 0) +
+      Number(e.expense_staff_cash || 0) +
+      Number(e.expense_enterprise_cash || 0) +
+      Number(e.expense_misc_cash || 0),
+    0
+  );
+  const gpayExpenses = selectedEntries.reduce(
+    (sum, e) =>
+      sum +
+      Number(e.expense_self_gpay || 0) +
+      Number(e.expense_staff_gpay || 0) +
+      Number(e.expense_enterprise_gpay || 0) +
+      Number(e.expense_misc_gpay || 0),
+    0
+  );
   const totalExpenses = cashExpenses + gpayExpenses;
 
-  // Balance calculations
-  const bankBalance = gpayDeposited + gpayCollected - (gpayExpenses + walletTopup);
-  const cashInHand = cashCollected - cashExpenses - cashDeposited;
+  // ✅ Wallets
+  const walletTopup = selectedEntries.reduce(
+    (sum, e) => sum + Number(e.ed_wallet_gpay || 0),
+    0
+  );
+  const portalUsed = selectedEntries.reduce(
+    (sum, e) => sum + Number(e.portal_gpay || 0),
+    0
+  );
+
+  // ✅ Final balances
+  const bankBalance =
+    openingBalance +
+    gpayDeposited +
+    directRevenueGpay +
+    serviceFeesGpay -
+    thirdpartyGpay -
+    gpayExpenses -
+    walletTopup;
+
+  const cashInHand =
+    openingCash +
+    directRevenueCash +
+    serviceFeesCash -
+    cashExpenses -
+    cashDeposited -
+    thirdpartyCash;
+
   const walletBalance = walletTopup - portalUsed;
-  
-  // Income and profit calculations
-  const totalCustomerCollection = cashCollected + gpayCollected;
-  const netProfit = totalCustomerCollection - (portalUsed + totalExpenses);
-  
-  // Pending amounts
-  const pendingToReceive = sum('receive_cash') + sum('receive_gpay');
-  const pendingToGive = sum('give_cash') + sum('give_gpay');
+
+  // ✅ Pending
+  const pendingReceive = selectedEntries.reduce(
+    (sum, e) => sum + Number(e.receive_cash || 0) + Number(e.receive_gpay || 0),
+    0
+  );
+  const pendingGive = selectedEntries.reduce(
+    (sum, e) => sum + Number(e.give_cash || 0) + Number(e.give_gpay || 0),
+    0
+  );
+  const netPending = pendingReceive - pendingGive;
+
+  // Net profit calculation
+ const netProfit = 
+  (directRevenueCash + directRevenueGpay + serviceFeesCash + serviceFeesGpay) -
+  (totalExpenses + portalUsed + thirdpartyGpay + thirdpartyCash);
+
 
   // Date navigation
   const navigateDate = (direction) => {
-    const currentDate = new Date(selectedDate);
+    const currentDate = new Date(form.entry_date);
     currentDate.setDate(currentDate.getDate() + direction);
-    setSelectedDate(currentDate.toISOString().split('T')[0]);
+    setForm({ ...form, entry_date: currentDate.toISOString().split('T')[0] });
   };
 
   const goToToday = () => {
-    setSelectedDate(new Date().toISOString().split('T')[0]);
+    setForm({ ...form, entry_date: new Date().toISOString().split('T')[0] });
   };
 
   // Profitability indicator
@@ -79,11 +176,14 @@ const DailyReport = () => {
   // Mismatch checker
   const getMismatches = () => {
     const mismatches = [];
-    if (gpayDeposited < gpayCollected) {
-      mismatches.push('GPay deposit is less than GPay credited - possible missing entries');
-    }
     if (walletBalance < 0) {
       mismatches.push('Negative wallet balance detected');
+    }
+    if (cashInHand < 0) {
+      mismatches.push('Negative cash in hand - check calculations');
+    }
+    if (bankBalance < 0) {
+      mismatches.push('Negative bank balance detected');
     }
     return mismatches;
   };
@@ -91,7 +191,7 @@ const DailyReport = () => {
   // Category-wise summary
   const getCategorySummary = () => {
     const categories = {};
-    dailyEntries.forEach(entry => {
+    selectedEntries.forEach(entry => {
       const item = entry.item || 'Miscellaneous';
       const totalAmount = (entry.credited_cash || 0) + (entry.credited_gpay || 0);
       if (categories[item]) {
@@ -106,54 +206,60 @@ const DailyReport = () => {
   // Expense category summary
   const getExpenseSummary = () => {
     return [
-      { category: 'Self', cash: sum('expense_self_cash'), gpay: sum('expense_self_gpay') },
-      { category: 'Staff', cash: sum('expense_staff_cash'), gpay: sum('expense_staff_gpay') },
-      { category: 'Enterprise', cash: sum('expense_enterprise_cash'), gpay: sum('expense_enterprise_gpay') },
-      { category: 'Miscellaneous', cash: sum('expense_misc_cash'), gpay: sum('expense_misc_gpay') }
+      { 
+        category: 'Self', 
+        cash: selectedEntries.reduce((sum, e) => sum + Number(e.expense_self_cash || 0), 0),
+        gpay: selectedEntries.reduce((sum, e) => sum + Number(e.expense_self_gpay || 0), 0)
+      },
+      { 
+        category: 'Staff', 
+        cash: selectedEntries.reduce((sum, e) => sum + Number(e.expense_staff_cash || 0), 0),
+        gpay: selectedEntries.reduce((sum, e) => sum + Number(e.expense_staff_gpay || 0), 0)
+      },
+      { 
+        category: 'Enterprise', 
+        cash: selectedEntries.reduce((sum, e) => sum + Number(e.expense_enterprise_cash || 0), 0),
+        gpay: selectedEntries.reduce((sum, e) => sum + Number(e.expense_enterprise_gpay || 0), 0)
+      },
+      { 
+        category: 'Miscellaneous', 
+        cash: selectedEntries.reduce((sum, e) => sum + Number(e.expense_misc_cash || 0), 0),
+        gpay: selectedEntries.reduce((sum, e) => sum + Number(e.expense_misc_gpay || 0), 0)
+      }
     ];
-  };
-
-  // Running balance calculation
-  const getRunningBalance = () => {
-    let runningCash = 0;
-    let runningBank = 0;
-    let runningWallet = 0;
-    
-    return dailyEntries.map(entry => {
-      runningCash += (entry.credited_cash || 0) - (entry.expense_self_cash || 0) - (entry.expense_staff_cash || 0) - (entry.expense_enterprise_cash || 0) - (entry.expense_misc_cash || 0) - (entry.deposit_cash || 0);
-      runningBank += (entry.deposit_gpay || 0) + (entry.credited_gpay || 0) - (entry.expense_self_gpay || 0) - (entry.expense_staff_gpay || 0) - (entry.expense_enterprise_gpay || 0) - (entry.expense_misc_gpay || 0) - (entry.ed_wallet_gpay || 0);
-      runningWallet += (entry.ed_wallet_gpay || 0) - (entry.portal_gpay || 0);
-      
-      return {
-        ...entry,
-        runningCash,
-        runningBank,
-        runningWallet
-      };
-    });
   };
 
   const profitStatus = getProfitabilityStatus();
   const mismatches = getMismatches();
   const categorySummary = getCategorySummary();
   const expenseSummary = getExpenseSummary();
-  const runningBalanceData = getRunningBalance();
 
   const handlePrintReport = () => {
     window.print();
   };
 
   const handleExportCSV = () => {
-    const csvData = dailyEntries.map(entry => ({
-      Item: entry.item,
-      Customer: entry.customer_name,
+    if (selectedEntries.length === 0) {
+      alert('No data to export');
+      return;
+    }
+
+    const csvData = selectedEntries.map(entry => ({
+      Item: entry.item || '',
+      Customer: entry.customer_name || '',
       'Cash Credited': entry.credited_cash || 0,
       'GPay Credited': entry.credited_gpay || 0,
       'Cash Deposited': entry.deposit_cash || 0,
       'GPay Deposited': entry.deposit_gpay || 0,
       'Portal Payment': entry.portal_gpay || 0,
       'Wallet Topup': entry.ed_wallet_gpay || 0,
-      Date: entry.entry_date
+      'Third Party Cash': entry.thirdparty_paid_cash || 0,
+      'Third Party GPay': entry.thirdparty_paid_gpay || 0,
+      'Service Fee Cash': entry.thirdparty_fee_cash || 0,
+      'Service Fee GPay': entry.thirdparty_fee_gpay || 0,
+      'Opening Bank Balance': entry.opening_bank_balance || 0,
+      'Opening Cash Balance': entry.opening_cash_balance || 0,
+      Date: entry.entry_date || ''
     }));
     
     const csvString = [
@@ -195,8 +301,8 @@ const DailyReport = () => {
           </button>
           <input
             type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
+            value={form.entry_date}
+            onChange={(e) => setForm({ ...form, entry_date: e.target.value })}
             className="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
           <button onClick={() => navigateDate(1)} className="flex items-center gap-1 px-3 py-2 border rounded hover:bg-gray-50">
@@ -206,6 +312,11 @@ const DailyReport = () => {
           <button onClick={goToToday} className="px-3 py-2 bg-gray-800 text-white rounded hover:bg-gray-900">
             Today
           </button>
+        </div>
+
+        {/* Entry count indicator */}
+        <div className="mt-3 text-sm text-gray-600">
+          Found {selectedEntries.length} entries for {selectedDate}
         </div>
       </div>
 
@@ -234,71 +345,99 @@ const DailyReport = () => {
         )}
       </div>
 
-      {/* Summary Cards */}
+      {/* Opening Balance Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <div className="text-purple-800 font-semibold">Opening Bank Balance</div>
+          <div className="text-2xl font-bold text-purple-900">₹{openingBalance}</div>
+          <div className="text-sm text-purple-600">Starting balance for the day</div>
+        </div>
+        
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+          <div className="text-indigo-800 font-semibold">Opening Cash Balance</div>
+          <div className="text-2xl font-bold text-indigo-900">₹{openingCash}</div>
+          <div className="text-sm text-indigo-600">Cash in hand at start</div>
+        </div>
+      </div>
+
+      {/* Revenue Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="text-green-800 font-semibold">Total Income</div>
-          <div className="text-2xl font-bold text-green-900">₹{totalCustomerCollection}</div>
-          <div className="text-sm text-green-600">Cash: ₹{cashCollected} | GPay: ₹{gpayCollected}</div>
+          <div className="text-green-800 font-semibold">Total Revenue</div>
+          <div className="text-2xl font-bold text-green-900">₹{totalRevenue}</div>
+          <div className="text-sm text-green-600">Direct + Service Fees</div>
         </div>
         
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="text-red-800 font-semibold">Total Expenses</div>
           <div className="text-2xl font-bold text-red-900">₹{totalExpenses}</div>
-          <div className="text-sm text-red-600">Cash: ₹{cashExpenses} | GPay: ₹{gpayExpenses}</div>
+          <div className="text-sm text-red-600">All expense categories</div>
         </div>
         
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="text-yellow-800 font-semibold">Third Party Payments</div>
+          <div className="text-2xl font-bold text-yellow-900">₹{totalThirdparty}</div>
+          <div className="text-sm text-yellow-600">Cash: ₹{thirdpartyCash} | GPay: ₹{thirdpartyGpay}</div>
+        </div>
+        
+        <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+          <div className="text-pink-800 font-semibold">Total Deposits</div>
+          <div className="text-2xl font-bold text-pink-900">₹{totalDeposits}</div>
+          <div className="text-sm text-pink-600">Cash: ₹{cashDeposited} | GPay: ₹{gpayDeposited}</div>
+        </div>
+      </div>
+
+      {/* Current Balance Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="text-blue-800 font-semibold">Bank Balance</div>
+          <div className="text-blue-800 font-semibold">Current Bank Balance</div>
           <div className="text-2xl font-bold text-blue-900">₹{bankBalance}</div>
-          <div className="text-sm text-blue-600">Deposited: ₹{gpayDeposited}</div>
+          <div className="text-sm text-blue-600">Including all transactions</div>
         </div>
         
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-          <div className="text-orange-800 font-semibold">Cash in Hand</div>
+          <div className="text-orange-800 font-semibold">Current Cash in Hand</div>
           <div className="text-2xl font-bold text-orange-900">₹{cashInHand}</div>
-          <div className="text-sm text-orange-600">Deposited: ₹{cashDeposited}</div>
+          <div className="text-sm text-orange-600">After all cash transactions</div>
+        </div>
+        
+        <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
+          <div className="text-teal-800 font-semibold">Wallet Balance</div>
+          <div className="text-2xl font-bold text-teal-900">₹{walletBalance}</div>
+          <div className="text-sm text-teal-600">Topup: ₹{walletTopup} | Used: ₹{portalUsed}</div>
         </div>
       </div>
 
       {/* Detailed Summary Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Payment Mode Summary */}
+        {/* Revenue Breakdown */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h3 className="text-lg font-semibold mb-4">Payment Mode Summary</h3>
+          <h3 className="text-lg font-semibold mb-4">Revenue Breakdown</h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span>Collections (Cash)</span>
-              <span className="font-semibold text-green-600">₹{cashCollected}</span>
+              <span>Direct Revenue (Cash)</span>
+              <span className="font-semibold text-green-600">₹{directRevenueCash}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span>Collections (GPay)</span>
-              <span className="font-semibold text-green-600">₹{gpayCollected}</span>
+              <span>Direct Revenue (GPay)</span>
+              <span className="font-semibold text-green-600">₹{directRevenueGpay}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span>Deposits (Cash)</span>
-              <span className="font-semibold text-blue-600">₹{cashDeposited}</span>
+              <span>Service Fees (Cash)</span>
+              <span className="font-semibold text-blue-600">₹{serviceFeesCash}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span>Deposits (GPay)</span>
-              <span className="font-semibold text-blue-600">₹{gpayDeposited}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Wallet Topup</span>
-              <span className="font-semibold text-orange-600">₹{walletTopup}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Portal Usage</span>
-              <span className="font-semibold text-red-600">₹{portalUsed}</span>
+              <span>Service Fees (GPay)</span>
+              <span className="font-semibold text-blue-600">₹{serviceFeesGpay}</span>
             </div>
             <div className="flex justify-between items-center border-t pt-2">
-              <span className="font-semibold">Wallet Balance</span>
-              <span className="font-bold text-orange-700">₹{walletBalance}</span>
+              <span className="font-semibold">Total Revenue</span>
+              <span className="font-bold text-green-700">₹{totalRevenue}</span>
             </div>
           </div>
         </div>
 
-        {/* Category-wise Income */}
+        {/* Service-wise Income */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <h3 className="text-lg font-semibold mb-4">Service-wise Income</h3>
           <div className="space-y-2">
@@ -337,25 +476,25 @@ const DailyReport = () => {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span>To Receive (Cash)</span>
-              <span className="font-semibold text-green-600">₹{sum('receive_cash')}</span>
+              <span className="font-semibold text-green-600">₹{selectedEntries.reduce((sum, e) => sum + Number(e.receive_cash || 0), 0)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span>To Receive (GPay)</span>
-              <span className="font-semibold text-green-600">₹{sum('receive_gpay')}</span>
+              <span className="font-semibold text-green-600">₹{selectedEntries.reduce((sum, e) => sum + Number(e.receive_gpay || 0), 0)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span>To Give (Cash)</span>
-              <span className="font-semibold text-red-600">₹{sum('give_cash')}</span>
+              <span className="font-semibold text-red-600">₹{selectedEntries.reduce((sum, e) => sum + Number(e.give_cash || 0), 0)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span>To Give (GPay)</span>
-              <span className="font-semibold text-red-600">₹{sum('give_gpay')}</span>
+              <span className="font-semibold text-red-600">₹{selectedEntries.reduce((sum, e) => sum + Number(e.give_gpay || 0), 0)}</span>
             </div>
             <div className="border-t pt-2">
               <div className="flex justify-between items-center font-semibold">
                 <span>Net Pending</span>
-                <span className={pendingToReceive - pendingToGive >= 0 ? 'text-green-600' : 'text-red-600'}>
-                  ₹{Math.abs(pendingToReceive - pendingToGive)}
+                <span className={netPending >= 0 ? 'text-green-600' : 'text-red-600'}>
+                  ₹{Math.abs(netPending)}
                 </span>
               </div>
             </div>
@@ -363,7 +502,7 @@ const DailyReport = () => {
         </div>
       </div>
 
-      {/* Final Calculations */}
+      {/* Final Day Summary */}
       <div className="bg-gray-50 rounded-lg p-6 border-2 border-gray-200">
         <h3 className="text-xl font-bold mb-4 text-center">Final Day Summary</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
@@ -373,7 +512,7 @@ const DailyReport = () => {
               ₹{Math.abs(netProfit)}
             </div>
             <div className="text-sm text-gray-500 mt-1">
-              Income - (Portal + Expenses)
+              Revenue - (Portal + Expenses + Third Party)
             </div>
           </div>
           <div className="bg-white rounded-lg p-4 shadow-sm">
@@ -384,16 +523,14 @@ const DailyReport = () => {
             <div className="text-sm text-gray-500 mt-1">Available Cash</div>
           </div>
           <div className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="text-gray-600 font-medium">Digital Balance</div>
+            <div className="text-gray-600 font-medium">Bank Position</div>
             <div className={`text-3xl font-bold ${bankBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               ₹{Math.abs(bankBalance)}
             </div>
-            <div className="text-sm text-gray-500 mt-1">Bank + Wallet</div>
+            <div className="text-sm text-gray-500 mt-1">Current Bank Balance</div>
           </div>
         </div>
       </div>
-
-
 
       {/* Daily Notes */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
@@ -404,10 +541,29 @@ const DailyReport = () => {
           placeholder="Add notes about today's activities, observations, or reminders..."
           className="w-full h-24 p-3 border rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
-        <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        <button 
+          onClick={() => {
+            // Add functionality to save notes to database
+            console.log('Saving notes:', dailyNotes);
+            alert('Notes saved successfully!');
+          }}
+          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
           Save Notes
         </button>
       </div>
+
+      {/* Loading indicator */}
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <span>Loading data...</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

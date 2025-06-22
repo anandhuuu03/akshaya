@@ -1,14 +1,55 @@
 import { useState, useEffect } from "react";
-import { pb } from "../Pocketbase";
+import { ChevronDown, ChevronUp, Save, Edit3, Calendar, Search, Filter, DollarSign, CreditCard, Building, User, ArrowRight, Check, X, Eye, EyeOff } from "lucide-react";
+
+// Mock PocketBase for demo - replace with actual import
+import PocketBase from 'pocketbase';
+const pb = new PocketBase('https://virtualdrive.pockethost.io');
 
 const EditHistory = () => {
   const [entries, setEntries] = useState([]);
+  const [filteredEntries, setFilteredEntries] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+  const [selectedEntry, setSelectedEntry] = useState(null);
+  const [viewMode, setViewMode] = useState("table"); // table, card, detail
+  const [expandedSections, setExpandedSections] = useState({});
+  const [visibleColumns, setVisibleColumns] = useState({});
+
+  // Field categories for better organization
+  const fieldCategories = {
+    basic: {
+      title: "Basic Info",
+      icon: User,
+      fields: ["item", "customer_name", "entry_date"],
+      color: "blue"
+    },
+    cash: {
+      title: "Cash Transactions",
+      icon: DollarSign,
+      fields: ["deposit_cash", "credited_cash", "expense_self_cash", "expense_staff_cash", 
+               "expense_enterprise_cash", "expense_misc_cash", "receive_cash", "give_cash", 
+               "opening_cash_balance", "thirdparty_paid_cash", "thirdparty_fee_cash"],
+      color: "green"
+    },
+    digital: {
+      title: "Digital Payments",
+      icon: CreditCard,
+      fields: ["ed_wallet_gpay", "portal_gpay", "deposit_gpay", "credited_gpay", 
+               "expense_self_gpay", "expense_staff_gpay", "expense_enterprise_gpay", 
+               "expense_misc_gpay", "receive_gpay", "give_gpay", "thirdparty_paid_gpay", "thirdparty_fee_gpay"],
+      color: "purple"
+    },
+    banking: {
+      title: "Bank Balance",
+      icon: Building,
+      fields: ["opening_bank_balance", "closing_bank_balance"],
+      color: "indigo"
+    }
+  };
 
   const fetchFilteredEntries = async () => {
     setLoading(true);
@@ -22,6 +63,16 @@ const EditHistory = () => {
         filter
       });
       setEntries(res);
+      setFilteredEntries(res);
+      
+      // Initialize visible columns
+      if (res.length > 0) {
+        const initialVisible = {};
+        Object.keys(fieldCategories).forEach(category => {
+          initialVisible[category] = true;
+        });
+        setVisibleColumns(initialVisible);
+      }
     } catch (err) {
       console.error("Error fetching entries:", err);
     }
@@ -32,13 +83,27 @@ const EditHistory = () => {
     fetchFilteredEntries();
   }, []);
 
+  useEffect(() => {
+    const filtered = entries.filter(entry => {
+      if (!searchTerm) return true;
+      return Object.values(entry).some(value => 
+        value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    });
+    setFilteredEntries(filtered);
+  }, [searchTerm, entries]);
+
   const handleFieldChange = (id, field, value) => {
     setEntries(prev => prev.map(entry => (
+      entry.id === id ? { ...entry, [field]: value } : entry
+    )));
+    setFilteredEntries(prev => prev.map(entry => (
       entry.id === id ? { ...entry, [field]: value } : entry
     )));
   };
 
   const saveEntry = async (entry) => {
+    setEditingId(entry.id);
     try {
       const update = { ...entry };
       delete update.id;
@@ -49,63 +114,153 @@ const EditHistory = () => {
 
       await pb.collection("daily_entries").update(entry.id, update);
       setSuccessMessage("Entry updated successfully!");
-      setEditingId(null);
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
       console.error("Error updating entry:", err);
       alert("Update failed.");
     }
+    setEditingId(null);
   };
-
-  const filteredEntries = entries.filter(entry => {
-    if (!searchTerm) return true;
-    return Object.values(entry).some(value => 
-      value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  });
 
   const formatFieldName = (key) => {
     return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  const getFieldKeys = () => {
-    if (!entries[0]) return [];
-    return Object.keys(entries[0]).filter(k => 
-      !["id", "collectionId", "collectionName", "created", "updated"].includes(k)
-    );
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
 
+  const toggleColumnVisibility = (category) => {
+    setVisibleColumns(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
+  };
+
+  const getColorClasses = (color) => {
+    const colors = {
+      blue: "bg-blue-50 border-blue-200 text-blue-800",
+      green: "bg-green-50 border-green-200 text-green-800",
+      purple: "bg-purple-50 border-purple-200 text-purple-800",
+      indigo: "bg-indigo-50 border-indigo-200 text-indigo-800"
+    };
+    return colors[color] || colors.blue;
+  };
+
+  // Card View Component
+  const EntryCard = ({ entry }) => (
+    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-lg font-semibold">{entry.item}</h3>
+            <p className="text-indigo-100">{entry.customer_name}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-indigo-100 text-sm">Date</p>
+            <p className="font-medium">{entry.entry_date}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="p-4 space-y-4">
+        {Object.entries(fieldCategories).map(([categoryKey, category]) => (
+          <div key={categoryKey} className={`border rounded-lg ${getColorClasses(category.color)}`}>
+            <button
+              onClick={() => toggleSection(`${entry.id}-${categoryKey}`)}
+              className="w-full p-3 flex items-center justify-between hover:bg-opacity-80 transition-colors"
+            >
+              <div className="flex items-center space-x-2">
+                <category.icon className="w-4 h-4" />
+                <span className="font-medium">{category.title}</span>
+              </div>
+              {expandedSections[`${entry.id}-${categoryKey}`] ? 
+                <ChevronUp className="w-4 h-4" /> : 
+                <ChevronDown className="w-4 h-4" />
+              }
+            </button>
+            
+            {expandedSections[`${entry.id}-${categoryKey}`] && (
+              <div className="border-t border-current border-opacity-20 p-3 space-y-2 bg-white bg-opacity-50">
+                {category.fields.map(field => (
+                  <div key={field} className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-700 flex-1">
+                      {formatFieldName(field)}
+                    </label>
+                    <input
+                      type={field.includes('date') ? 'date' : 'text'}
+                      value={entry[field] ?? ""}
+                      onChange={e => handleFieldChange(entry.id, field, e.target.value)}
+                      className="w-32 border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+        
+        <button 
+          onClick={() => saveEntry(entry)}
+          disabled={editingId === entry.id}
+          className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-green-400 disabled:to-green-400 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2"
+        >
+          {editingId === entry.id ? (
+            <>
+              <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+              <span>Saving...</span>
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4" />
+              <span>Save Changes</span>
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold text-gray-800 flex items-center">
-              <svg className="w-8 h-8 mr-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Edit Finance Entries
-            </h1>
-            <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-              {filteredEntries.length} entries found
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 flex items-center">
+                <Edit3 className="w-8 h-8 mr-3 text-indigo-600" />
+                Finance Entry Editor
+              </h1>
+              <p className="text-gray-600 mt-1">Manage and edit your financial records with ease</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
+                {filteredEntries.length} entries
+              </div>
             </div>
           </div>
 
           {/* Success Message */}
           {successMessage && (
-            <div className="mb-4 p-3 bg-green-100 border border-green-300 text-green-700 rounded-lg flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center">
+              <Check className="w-5 h-5 mr-2" />
               {successMessage}
             </div>
           )}
+        </div>
 
-          {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Controls */}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Calendar className="w-4 h-4 inline mr-1" />
+                From Date
+              </label>
               <input 
                 type="date" 
                 value={startDate} 
@@ -114,7 +269,10 @@ const EditHistory = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Calendar className="w-4 h-4 inline mr-1" />
+                To Date
+              </label>
               <input 
                 type="date" 
                 value={endDate} 
@@ -123,7 +281,10 @@ const EditHistory = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Search className="w-4 h-4 inline mr-1" />
+                Search
+              </label>
               <input 
                 type="text" 
                 placeholder="Search entries..." 
@@ -131,6 +292,17 @@ const EditHistory = () => {
                 onChange={e => setSearchTerm(e.target.value)} 
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" 
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">View Mode</label>
+              <select 
+                value={viewMode} 
+                onChange={e => setViewMode(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+              >
+                <option value="card">Card View</option>
+                <option value="table">Table View</option>
+              </select>
             </div>
             <div className="flex items-end">
               <button 
@@ -140,96 +312,124 @@ const EditHistory = () => {
               >
                 {loading ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
                     Loading...
                   </>
                 ) : (
                   <>
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                    </svg>
-                    Filter
+                    <Filter className="w-4 h-4 mr-2" />
+                    Apply
                   </>
                 )}
               </button>
             </div>
           </div>
-        </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <svg className="animate-spin h-12 w-12 text-indigo-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <p className="text-gray-600">Loading entries...</p>
+          {/* Column Visibility Controls for Table View */}
+          {viewMode === "table" && (
+            <div className="border-t pt-4">
+              <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <EyeOff className="w-4 h-4 mr-1" />
+                Show/Hide Categories
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(fieldCategories).map(([categoryKey, category]) => (
+                  <button
+                    key={categoryKey}
+                    onClick={() => toggleColumnVisibility(categoryKey)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                      visibleColumns[categoryKey] 
+                        ? `${getColorClasses(category.color)} border-current` 
+                        : 'bg-gray-100 text-gray-500 border-gray-300'
+                    }`}
+                  >
+                    <category.icon className="w-3 h-3 inline mr-1" />
+                    {category.title}
+                  </button>
+                ))}
               </div>
             </div>
-          ) : filteredEntries.length === 0 ? (
-            <div className="text-center py-12">
-              <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No entries found</h3>
-              <p className="text-gray-600">Try adjusting your filters or date range.</p>
+          )}
+        </div>
+
+        {/* Content */}
+        {loading ? (
+          <div className="bg-white rounded-xl shadow-lg p-12">
+            <div className="text-center">
+              <div className="animate-spin h-12 w-12 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading entries...</p>
             </div>
-          ) : (
+          </div>
+        ) : filteredEntries.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No entries found</h3>
+            <p className="text-gray-600">Try adjusting your filters or date range.</p>
+          </div>
+        ) : viewMode === "card" ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredEntries.map(entry => (
+              <EntryCard key={entry.id} entry={entry} />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    {getFieldKeys().map(key => (
-                      <th key={key} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
-                        {formatFieldName(key)}
-                      </th>
-                    ))}
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {Object.entries(fieldCategories).map(([categoryKey, category]) => 
+                      visibleColumns[categoryKey] && category.fields.map(field => (
+                        <th key={field} className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider border-l-2 ${
+                          category.color === 'blue' ? 'border-blue-400' :
+                          category.color === 'green' ? 'border-green-400' :
+                          category.color === 'purple' ? 'border-purple-400' :
+                          'border-indigo-400'
+                        }`}>
+                          <div className="flex items-center space-x-1">
+                            <category.icon className="w-3 h-3" />
+                            <span>{formatFieldName(field)}</span>
+                          </div>
+                        </th>
+                      ))
+                    )}
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200">
                   {filteredEntries.map((entry, index) => (
                     <tr key={entry.id} className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-                      {getFieldKeys().map(key => (
-                        <td key={key} className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="text"
-                            value={entry[key] ?? ""}
-                            onChange={e => handleFieldChange(entry.id, key, e.target.value)}
-                            className="w-full min-w-[150px] border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                            disabled={editingId && editingId !== entry.id}
-                          />
-                        </td>
-                      ))}
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                      {Object.entries(fieldCategories).map(([categoryKey, category]) => 
+                        visibleColumns[categoryKey] && category.fields.map(field => (
+                          <td key={field} className="px-4 py-3 whitespace-nowrap">
+                            <input
+                              type={field.includes('date') ? 'date' : 'text'}
+                              value={entry[field] ?? ""}
+                              onChange={e => handleFieldChange(entry.id, field, e.target.value)}
+                              className="w-full min-w-[120px] border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                              disabled={editingId && editingId !== entry.id}
+                            />
+                          </td>
+                        ))
+                      )}
+                      <td className="px-4 py-3 whitespace-nowrap text-center">
                         <button 
-                          onClick={() => {
-                            setEditingId(entry.id);
-                            saveEntry(entry);
-                          }}
+                          onClick={() => saveEntry(entry)}
                           disabled={editingId === entry.id}
-                          className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center mx-auto"
+                          className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors inline-flex items-center"
                         >
                           {editingId === entry.id ? (
                             <>
-                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
+                              <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full mr-1"></div>
                               Saving...
                             </>
                           ) : (
                             <>
-                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
+                              <Save className="w-3 h-3 mr-1" />
                               Save
                             </>
                           )}
@@ -240,12 +440,12 @@ const EditHistory = () => {
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Footer Stats */}
         {filteredEntries.length > 0 && (
-          <div className="mt-6 bg-white rounded-xl shadow-lg p-4">
+          <div className="bg-white rounded-xl shadow-lg p-4">
             <div className="flex flex-wrap justify-between items-center text-sm text-gray-600">
               <div>Showing {filteredEntries.length} of {entries.length} entries</div>
               <div className="flex items-center space-x-4">
