@@ -1,26 +1,30 @@
-import { useState } from 'react'
-import './App.css'
-import { Route , Routes } from 'react-router-dom'
+import { useState } from 'react';
+import './App.css';
+import { Route, Routes } from 'react-router-dom';
 
-import Homepage from './homepage/home'
-import EditHistory from './history/editpage' 
-import DailyReport from './reports/reportpage'
-import MonthlySummary from './monthly/newsummary'
-import WeeklyReport from './monthly/summaryy'
+import Homepage from './homepage/home';
+import EditHistory from './history/editpage';
+import DailyReport from './reports/reportpage';
+import MonthlySummary from './monthly/newsummary';
+import WeeklyReport from './monthly/summaryy';
+
+import TopNavbar from './Components/TopNavbar';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <Routes>
-      <Route path='/' element = {<Homepage/>}></Route>
-      <Route path='history' element = {<EditHistory/>}></Route>
-       <Route path='report' element = {<DailyReport/>}></Route>
-       <Route path='summary' element = {<MonthlySummary/>}></Route>
-       <Route path='weekly' element = {<WeeklyReport/>}></Route>
-    </Routes>
-    
-  )
+    <div>
+      <TopNavbar />
+      <div className="p-4">
+        <Routes>
+          <Route path="/" element={<Homepage />} />
+          <Route path="history" element={<EditHistory />} />
+          <Route path="report" element={<DailyReport />} />
+          <Route path="summary" element={<MonthlySummary />} />
+          <Route path="weekly" element={<WeeklyReport />} />
+        </Routes>
+      </div>
+    </div>
+  );
 }
 
-export default App
+export default App;
