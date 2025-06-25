@@ -8,16 +8,16 @@ const Homepage = () => {
     entry_date: new Date().toISOString().split("T")[0],
     item: "",
     customer_name: "",
-    service_type: "direct", // direct or third_party
+    service_type: "direct",
 
-    // Direct revenue (full amount is yours)
+    // Direct revenue
     credited_amount: "",
     credited_mode: "cash",
 
     // Third-party services
-    service_fee_amount: "", // your commission/fee
+    service_fee_amount: "",
     service_fee_mode: "cash",
-    thirdparty_amount: "", // amount to be paid to agency
+    thirdparty_amount: "",
     thirdparty_mode: "gpay",
 
     // Bank operations
@@ -32,9 +32,9 @@ const Homepage = () => {
     ed_wallet_gpay: "",
 
     opening_pan_wallet: "",
-    pan_wallet_topup: "", // select 510 or 1020 via checkbox
-    pan_operation_cash: "", // checkbox: 1 op = ₹250 via cash
-    pan_operation_gpay: "", // checkbox: 1 op = ₹250 via gpay
+    pan_wallet_topup: "",
+    pan_operation_cash: "",
+    pan_operation_gpay: "",
 
     // Expenses
     expense_self: "",
@@ -53,7 +53,6 @@ const Homepage = () => {
     give_mode: "cash",
   });
 
-
   const [entries, setEntries] = useState([]);
   const [showBankBalance, setShowBankBalance] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -69,7 +68,7 @@ const Homepage = () => {
           new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
             .toISOString()
             .split("T")[0]
-        }"`, // Last 30 days
+        }"`,
       });
       setEntries(records.items);
       setError("");
@@ -83,313 +82,247 @@ const Homepage = () => {
 
   useEffect(() => {
     fetchEntries();
-    // Check if we need to show opening bank balance (first entry of the day)
-    const today = new Date().toISOString().split("T")[0];
-    const selectedEntries = entries.filter((e) =>
-      e.entry_date?.startsWith(today)
-    );
-    if (selectedEntries.length === 0) {
-      setShowBankBalance(true);
-    }
   }, []);
 
-  // Replace your handleInputChange function with this debugging version:
+  // Check if we need to show opening bank balance after entries are loaded
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    const todayEntries = entries.filter((e) =>
+      e.entry_date?.startsWith(today)
+    );
+    setShowBankBalance(todayEntries.length === 0);
+  }, [entries]);
 
-const handleInputChange = (e) => {
-  const { name, value } = e.target;
-  
-  // 🔍 DEBUG: Log input changes
-  console.log("=== INPUT CHANGE DEBUG ===");
-  console.log("Field name:", name);
-  console.log("Raw input value:", value);
-  console.log("Value type:", typeof value);
-  console.log("Event target value:", e.target.value);
-  console.log("Event target type:", e.target.type);
-  
-  // Check if there's any preprocessing happening
-  if (name === 'credited_amount') {
-    console.log("🔍 CREDITED AMOUNT CHANGE:");
-    console.log("Current form value:", form.credited_amount);
-    console.log("New value:", value);
-    console.log("Character codes:", Array.from(value).map(char => char.charCodeAt(0)));
-  }
-  
-  setForm((prevForm) => {
-    const newForm = {
-      ...prevForm,
-      [name]: value,
-    };
-    
-    // Log the updated form state
-    if (name === 'credited_amount') {
-      console.log("Updated form credited_amount:", newForm.credited_amount);
+     const handleInputChange = (e) => {
+     const { name, value } = e.target;
+     console.log(`Field name: ${name}, Raw input value: ${value}`);
+
+     setForm((prevForm) => {
+       console.log(`Current form value: ${prevForm[name]}`);
+       return {
+         ...prevForm,
+         [name]: value,
+       };
+     });
+   };
+   
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      // Helper function to safely convert to number
+      const toNumber = (value) => {
+        const num = Number(value);
+        return isNaN(num) ? 0 : num;
+      };
+
+      const data = {
+        entry_date: form.entry_date,
+        item: form.item,
+        customer_name: form.customer_name,
+
+        // Opening balances (only if showBankBalance is true)
+        ...(showBankBalance && {
+          opening_bank_balance: toNumber(form.opening_bank_balance),
+          opening_cash_balance: toNumber(form.opening_cash_balance),
+          opening_wallet_balance: toNumber(form.opening_wallet_balance),
+          opening_pan_wallet: toNumber(form.opening_pan_wallet),
+        }),
+
+        // PAN wallet operations
+        pan_wallet_topup: toNumber(form.pan_wallet_topup),
+        pan_operation_cash: toNumber(form.pan_operation_cash),
+        pan_operation_gpay: toNumber(form.pan_operation_gpay),
+
+        // Revenue fields based on service type
+        ...(form.service_type === "direct"
+          ? {
+              [`credited_${form.credited_mode}`]: toNumber(form.credited_amount),
+            }
+          : {
+              [`thirdparty_fee_${form.service_fee_mode}`]: toNumber(form.service_fee_amount),
+              [`thirdparty_paid_${form.thirdparty_mode}`]: toNumber(form.thirdparty_amount),
+            }),
+
+        // Bank and wallet operations
+        [`deposit_${form.deposit_mode}`]: toNumber(form.deposit_amount),
+        portal_gpay: toNumber(form.portal_payment),
+        ed_wallet_gpay: toNumber(form.ed_wallet_gpay),
+
+        // Expenses
+        [`expense_self_${form.expense_self_mode}`]: toNumber(form.expense_self),
+        [`expense_staff_${form.expense_staff_mode}`]: toNumber(form.expense_staff),
+        [`expense_enterprise_${form.expense_enterprise_mode}`]: toNumber(form.expense_enterprise),
+        [`expense_misc_${form.expense_misc_mode}`]: toNumber(form.expense_misc),
+
+        // Pending amounts
+        [`receive_${form.receive_mode}`]: toNumber(form.receive_amount),
+        [`give_${form.give_mode}`]: toNumber(form.give_amount),
+      };
+
+      console.log("Data to be sent:", data);
+
+      // Create record in PocketBase
+      const savedRecord = await pb.collection("daily_entries").create(data);
+      console.log("Record saved successfully:", savedRecord);
+
+      // Reset form
+      setForm({
+        entry_date: new Date().toISOString().split("T")[0],
+        item: "",
+        customer_name: "",
+        service_type: "direct",
+        credited_amount: "",
+        credited_mode: "cash",
+        service_fee_amount: "",
+        service_fee_mode: "cash",
+        thirdparty_amount: "",
+        thirdparty_mode: "gpay",
+        opening_bank_balance: "",
+        opening_cash_balance: "",
+        opening_wallet_balance: "",
+        deposit_amount: "",
+        deposit_mode: "cash",
+        portal_payment: "",
+        ed_wallet_gpay: "",
+        opening_pan_wallet: "",
+        pan_wallet_topup: "",
+        pan_operation_cash: "",
+        pan_operation_gpay: "",
+        expense_self: "",
+        expense_self_mode: "cash",
+        expense_staff: "",
+        expense_staff_mode: "cash",
+        expense_enterprise: "",
+        expense_enterprise_mode: "cash",
+        expense_misc: "",
+        expense_misc_mode: "cash",
+        receive_amount: "",
+        receive_mode: "cash",
+        give_amount: "",
+        give_mode: "cash",
+      });
+
+      setShowBankBalance(false);
+      await fetchEntries();
+    } catch (err) {
+      console.error("Error creating entry:", err);
+      setError(`Failed to save entry: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
-    
-    console.log("=== END INPUT DEBUG ===");
-    return newForm;
-  });
-};
+  };
 
-// Also, let's create a safer version without any potential issues:
-const handleInputChangeSafe = (e) => {
-  const { name, value } = e.target;
-  
-  setForm(prevForm => ({
-    ...prevForm,
-    [name]: String(value) // Ensure it's always a string
-  }));
-};
-
-  // Add this debugging code in your handleSubmit function, right before creating the PocketBase record:
-
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError("");
-
-  try {
-    // 🔍 DEBUG: Log the raw form values
-    console.log("=== DEBUGGING NUMBER CONVERSION ===");
-    console.log("Raw form.credited_amount:", form.credited_amount);
-    console.log("Type of form.credited_amount:", typeof form.credited_amount);
-    console.log("parseInt result:", parseInt(form.credited_amount));
-    console.log("Number result:", Number(form.credited_amount));
-    
-    // 🔍 Test different conversion methods
-    const testValue = form.credited_amount;
-    console.log("Original value:", testValue);
-    console.log("parseInt(testValue):", parseInt(testValue));
-    console.log("Number(testValue):", Number(testValue));
-    console.log("Math.floor(Number(testValue)):", Math.floor(Number(testValue)));
-    console.log("+ operator:", +testValue);
-    
-    // Prepare data for PocketBase with debugging
-    const creditedAmount = parseInt(form.credited_amount) || 0;
-    console.log("Final credited amount to be saved:", creditedAmount);
-
-    const data = {
-      entry_date: form.entry_date,
-      item: form.item,
-      customer_name: form.customer_name,
-
-      // Opening bank balance
-      opening_bank_balance: parseInt(form.opening_bank_balance) || 0,
-      opening_cash_balance: parseInt(form.opening_cash_balance) || 0,
-      opening_wallet_balance: parseInt(form.opening_wallet_balance) || 0,
-
-      opening_pan_wallet: parseInt(form.opening_pan_wallet) || 0,
-      pan_wallet_topup: parseInt(form.pan_wallet_topup) || 0,
-      pan_operation_cash: parseInt(form.pan_operation_cash) || 0,
-      pan_operation_gpay: parseInt(form.pan_operation_gpay) || 0,
-
-      // Revenue fields based on service type
-      ...(form.service_type === "direct"
-        ? {
-            [`credited_${form.credited_mode}`]: creditedAmount,
-          }
-        : {
-            [`thirdparty_fee_${form.service_fee_mode}`]:
-              parseInt(form.service_fee_amount) || 0,
-            [`thirdparty_paid_${form.thirdparty_mode}`]:
-              parseInt(form.thirdparty_amount) || 0,
-          }),
-
-      // Bank and wallet operations
-      [`deposit_${form.deposit_mode}`]: parseInt(form.deposit_amount) || 0,
-      portal_gpay: parseInt(form.portal_payment) || 0,
-      ed_wallet_gpay: parseInt(form.ed_wallet_gpay) || 0,
-
-      // Expenses
-      [`expense_self_${form.expense_self_mode}`]:
-        parseInt(form.expense_self) || 0,
-      [`expense_staff_${form.expense_staff_mode}`]:
-        parseInt(form.expense_staff) || 0,
-      [`expense_enterprise_${form.expense_enterprise_mode}`]:
-        parseInt(form.expense_enterprise) || 0,
-      [`expense_misc_${form.expense_misc_mode}`]:
-        parseInt(form.expense_misc) || 0,
-
-      // Pending amounts
-      [`receive_${form.receive_mode}`]: parseInt(form.receive_amount) || 0,
-      [`give_${form.give_mode}`]: parseInt(form.give_amount) || 0,
-    };
-
-    // 🔍 DEBUG: Log the complete data object
-    console.log("Complete data object to be sent:", data);
-    console.log("Specific field being sent:", data[`credited_${form.credited_mode}`]);
-
-    // Create record in PocketBase
-    const savedRecord = await pb.collection("daily_entries").create(data);
-    
-    // 🔍 DEBUG: Log the saved record
-    console.log("Record saved successfully:", savedRecord);
-    console.log("Saved credited amount:", savedRecord[`credited_${form.credited_mode}`]);
-    
-    console.log("=== END DEBUGGING ===");
-
-    // Reset form (rest of your code...)
-    // To this:
-give_mode: "cash",  // ✅ Correct field name
-
-// Here's the corrected reset object:
-setForm({
-  entry_date: new Date().toISOString().split("T")[0],
-  item: "",
-  customer_name: "",
-  service_type: "direct",
-  credited_amount: "",
-  credited_mode: "cash",
-  service_fee_amount: "",
-  service_fee_mode: "cash",
-  thirdparty_amount: "",
-  thirdparty_mode: "gpay",
-  opening_bank_balance: "",
-  opening_cash_balance: "", // ✅ Add this missing field
-  opening_wallet_balance: "", // ✅ Add this missing field
-  deposit_amount: "",
-  deposit_mode: "cash",
-  portal_payment: "",
-  ed_wallet_gpay: "",
-  opening_pan_wallet: "", // ✅ Add this missing field
-  pan_wallet_topup: "", // ✅ Add this missing field
-  pan_operation_cash: "", // ✅ Add this missing field
-  pan_operation_gpay: "", // ✅ Add this missing field
-  expense_self: "",
-  expense_self_mode: "cash",
-  expense_staff: "",
-  expense_staff_mode: "cash",
-  expense_enterprise: "",
-  expense_enterprise_mode: "cash",
-  expense_misc: "",
-  expense_misc_mode: "cash",
-  receive_amount: "",
-  receive_mode: "cash",
-  give_amount: "",
-  give_mode: "cash", // ✅ Fixed field name
-});
-
-    setShowBankBalance(false);
-    await fetchEntries();
-  } catch (err) {
-    console.error("Error creating entry:", err);
-    setError(`Failed to save entry: ${err.message}`);
-  } finally {
-    setLoading(false);
-  }
-};
-
-  // Use selected entry date from the form
-  // Get selected date entries sorted chronologically
+  // Calculate summary data
   const selectedDate = form.entry_date;
-
   const selectedEntries = entries
     .filter((e) => e.entry_date?.startsWith(selectedDate))
     .sort((a, b) => new Date(a.created) - new Date(b.created));
 
-  // Opening Balances
-  const openingBalance = Number(selectedEntries[0]?.opening_bank_balance || 0);
-  const openingCash = Number(selectedEntries[0]?.opening_cash_balance || 0);
+  // Helper function to safely get number from entry
+  const getNumber = (value) => Number(value || 0);
 
-  // ✅ Total direct service revenue (as before)
+  // Opening Balances
+  const openingBalance = getNumber(selectedEntries[0]?.opening_bank_balance);
+  const openingCash = getNumber(selectedEntries[0]?.opening_cash_balance);
+  const openingWallet = getNumber(selectedEntries[0]?.opening_wallet_balance);
+  const openingPanWallet = getNumber(selectedEntries[0]?.opening_pan_wallet);
+
+  // Direct service revenue
   const directRevenueCash = selectedEntries.reduce(
-    (sum, e) => sum + Number(e.credited_cash || 0),
+    (sum, e) => sum + getNumber(e.credited_cash),
     0
   );
   const directRevenueGpay = selectedEntries.reduce(
-    (sum, e) => sum + Number(e.credited_gpay || 0),
+    (sum, e) => sum + getNumber(e.credited_gpay),
     0
   );
 
-  // ✅ Total third-party revenue collected from customer (this is now FULL amount received)
+  // Third-party service fees
   const serviceFeesCash = selectedEntries.reduce(
-    (sum, e) => sum + Number(e.thirdparty_fee_cash || 0),
+    (sum, e) => sum + getNumber(e.thirdparty_fee_cash),
     0
   );
   const serviceFeesGpay = selectedEntries.reduce(
-    (sum, e) => sum + Number(e.thirdparty_fee_gpay || 0),
+    (sum, e) => sum + getNumber(e.thirdparty_fee_gpay),
     0
   );
 
-  // ✅ Total revenue is now full amount received from customer
-
-  // ✅ Third-party amount paid out from bank via GPay
+  // Third-party amounts paid out
   const thirdpartyCash = selectedEntries.reduce(
-    (sum, e) => sum + Number(e.thirdparty_paid_cash || 0),
+    (sum, e) => sum + getNumber(e.thirdparty_paid_cash),
     0
   );
   const thirdpartyGpay = selectedEntries.reduce(
-    (sum, e) => sum + Number(e.thirdparty_paid_gpay || 0),
+    (sum, e) => sum + getNumber(e.thirdparty_paid_gpay),
     0
   );
 
-  // ✅ Deposits
+  // Deposits
   const cashDeposited = selectedEntries.reduce(
-    (sum, e) => sum + Number(e.deposit_cash || 0),
+    (sum, e) => sum + getNumber(e.deposit_cash),
     0
   );
   const gpayDeposited = selectedEntries.reduce(
-    (sum, e) => sum + Number(e.deposit_gpay || 0),
+    (sum, e) => sum + getNumber(e.deposit_gpay),
     0
   );
 
-  // ✅ Expenses
+  // Expenses
   const cashExpenses = selectedEntries.reduce(
     (sum, e) =>
       sum +
-      Number(e.expense_self_cash || 0) +
-      Number(e.expense_staff_cash || 0) +
-      Number(e.expense_enterprise_cash || 0) +
-      Number(e.expense_misc_cash || 0),
+      getNumber(e.expense_self_cash) +
+      getNumber(e.expense_staff_cash) +
+      getNumber(e.expense_enterprise_cash) +
+      getNumber(e.expense_misc_cash),
     0
   );
 
   const gpayExpenses = selectedEntries.reduce(
     (sum, e) =>
       sum +
-      Number(e.expense_self_gpay || 0) +
-      Number(e.expense_staff_gpay || 0) +
-      Number(e.expense_enterprise_gpay || 0) +
-      Number(e.expense_misc_gpay || 0),
+      getNumber(e.expense_self_gpay) +
+      getNumber(e.expense_staff_gpay) +
+      getNumber(e.expense_enterprise_gpay) +
+      getNumber(e.expense_misc_gpay),
     0
   );
 
-  // ✅ Wallets
+  // Wallet operations
   const walletTopup = selectedEntries.reduce(
-    (sum, e) => sum + Number(e.ed_wallet_gpay || 0),
+    (sum, e) => sum + getNumber(e.ed_wallet_gpay),
     0
   );
   const portalUsed = selectedEntries.reduce(
-    (sum, e) => sum + Number(e.portal_gpay || 0),
+    (sum, e) => sum + getNumber(e.portal_gpay),
     0
   );
 
   // PAN Wallet Operations
-  const openingPanWallet = Number(selectedEntries[0]?.opening_pan_wallet || 0);
   const panWalletTopup = selectedEntries.reduce(
-    (sum, e) => sum + Number(e.pan_wallet_topup || 0),
+    (sum, e) => sum + getNumber(e.pan_wallet_topup),
     0
   );
   const panOperationCash = selectedEntries.reduce(
-    (sum, e) => sum + Number(e.pan_operation_cash || 0),
+    (sum, e) => sum + getNumber(e.pan_operation_cash),
     0
   );
   const panOperationGpay = selectedEntries.reduce(
-    (sum, e) => sum + Number(e.pan_operation_gpay || 0),
+    (sum, e) => sum + getNumber(e.pan_operation_gpay),
     0
   );
 
-  // Total deductions from PAN Wallet (₹102 per operation)
-  const totalPanUsage = (panOperationCash + panOperationGpay) * 102;
-
-  // PAN Wallet balance
+  // PAN calculations
+  const totalPanOperations = panOperationCash + panOperationGpay;
+  const totalPanRevenue = totalPanOperations * 250;
+  const totalPanUsage = totalPanOperations * 102;
   const panWalletBalance = openingPanWallet + panWalletTopup - totalPanUsage;
 
-  // Update revenue: customers paid ₹250 per pan operation
-  const totalPanRevenue = (panOperationCash + panOperationGpay) * 250;
-  const panRevenueCash = panOperationCash * 250;
-  const panRevenueGpay = panOperationGpay * 250;
-
-  // Add to overall revenue
+  // Total revenue
   const totalRevenue =
     directRevenueCash +
     directRevenueGpay +
@@ -397,44 +330,42 @@ setForm({
     serviceFeesGpay +
     totalPanRevenue;
 
-  // Update cash in hand
+  // Cash in hand
   const cashInHand =
     openingCash +
     directRevenueCash +
     serviceFeesCash +
-    panRevenueCash -
+    (panOperationCash * 250) -
     cashExpenses -
     cashDeposited -
     thirdpartyCash;
 
-  // Update bank balance
+  // Bank balance
   const bankBalance =
     openingBalance +
     gpayDeposited +
     directRevenueGpay +
     serviceFeesGpay +
-    panRevenueGpay +
+    (panOperationGpay * 250) +
     cashDeposited -
     gpayExpenses -
     walletTopup -
     thirdpartyGpay -
-    panWalletTopup; // pan wallet is always topped up from bank
+    panWalletTopup;
 
-  const openingWallet = Number(selectedEntries[0]?.opening_wallet_balance || 0); // ✅
+  // Wallet balance
+  const walletBalance = openingWallet + walletTopup - portalUsed;
 
-  const walletBalance = openingWallet + walletTopup - portalUsed; // ✅ Include opening
-
-  // ✅ Pending
+  // Pending amounts
   const pendingReceive = selectedEntries.reduce(
-    (sum, e) => sum + Number(e.receive_cash || 0) + Number(e.receive_gpay || 0),
+    (sum, e) => sum + getNumber(e.receive_cash) + getNumber(e.receive_gpay),
     0
   );
   const pendingGive = selectedEntries.reduce(
-    (sum, e) => sum + Number(e.give_cash || 0) + Number(e.give_gpay || 0),
+    (sum, e) => sum + getNumber(e.give_cash) + getNumber(e.give_gpay),
     0
   );
   
-
   return (
     <div className="max-w-6xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6 text-center text-blue-800">
@@ -554,6 +485,7 @@ setForm({
                   name="credited_amount"
                   value={form.credited_amount}
                   onChange={handleInputChange}
+                  onWheel={(e) => e.target.blur()} 
                   placeholder="₹"
                   className="flex-1 border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-green-500"
                 />
@@ -583,6 +515,7 @@ setForm({
                     name="service_fee_amount"
                     value={form.service_fee_amount}
                     onChange={handleInputChange}
+                    onWheel={(e) => e.target.blur()} 
                     placeholder="₹"
                     className="flex-1 border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-green-500"
                   />
@@ -607,6 +540,7 @@ setForm({
                   name="thirdparty_amount"
                   value={form.thirdparty_amount}
                   onChange={handleInputChange}
+                  onWheel={(e) => e.target.blur()} 
                   placeholder="₹ (via GPay)"
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-orange-500"
                 />
@@ -628,6 +562,7 @@ setForm({
                   name="opening_bank_balance"
                   value={form.opening_bank_balance}
                   onChange={handleInputChange}
+                  onWheel={(e) => e.target.blur()} 
                   className="w-full border rounded px-3 py-2"
                   placeholder="Enter bank balance"
                 />
@@ -643,6 +578,7 @@ setForm({
                   name="opening_cash_balance"
                   value={form.opening_cash_balance}
                   onChange={handleInputChange}
+                  onWheel={(e) => e.target.blur()} 
                   className="w-full border rounded px-3 py-2"
                   placeholder="Enter cash in hand"
                 />
@@ -658,6 +594,7 @@ setForm({
                   name="opening_wallet_balance"
                   value={form.opening_wallet_balance}
                   onChange={handleInputChange}
+                  onWheel={(e) => e.target.blur()} 
                   className="w-full border rounded px-3 py-2"
                   placeholder="Enter wallet balance"
                 />
@@ -676,6 +613,7 @@ setForm({
                 name="deposit_amount"
                 value={form.deposit_amount}
                 onChange={handleInputChange}
+                onWheel={(e) => e.target.blur()} 
                 placeholder="₹"
                 className="flex-1 border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
@@ -701,6 +639,7 @@ setForm({
               name="ed_wallet_gpay"
               value={form.ed_wallet_gpay}
               onChange={handleInputChange}
+              onWheel={(e) => e.target.blur()} 
               placeholder="₹ (via GPay)"
               className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-purple-500"
             />
@@ -725,6 +664,7 @@ setForm({
                     name="opening_pan_wallet"
                     value={form.opening_pan_wallet}
                     onChange={handleInputChange}
+                    onWheel={(e) => e.target.blur()} 
                     placeholder="₹510, ₹1020, etc."
                     className="w-full border border-indigo-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-500"
                   />
@@ -788,6 +728,7 @@ setForm({
                       name="pan_operation_cash"
                       value={form.pan_operation_cash}
                       onChange={handleInputChange}
+                      onWheel={(e) => e.target.blur()} 
                       placeholder="0"
                       className="w-20 border border-gray-300 p-2 rounded focus:ring-2 focus:ring-indigo-500 text-center"
                       min="0"
@@ -803,6 +744,7 @@ setForm({
                       name="pan_operation_gpay"
                       value={form.pan_operation_gpay}
                       onChange={handleInputChange}
+                      onWheel={(e) => e.target.blur()} 
                       placeholder="0"
                       className="w-20 border border-gray-300 p-2 rounded focus:ring-2 focus:ring-indigo-500 text-center"
                       min="0"
@@ -844,6 +786,7 @@ setForm({
               name="portal_payment"
               value={form.portal_payment}
               onChange={handleInputChange}
+              onWheel={(e) => e.target.blur()} 
               placeholder="₹ (via Wallet)"
               className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-purple-500"
             />
@@ -860,6 +803,7 @@ setForm({
                 name="expense_self"
                 value={form.expense_self}
                 onChange={handleInputChange}
+                onWheel={(e) => e.target.blur()} 
                 placeholder="₹"
                 className="flex-1 border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-red-500"
               />
@@ -885,6 +829,7 @@ setForm({
                 name="expense_staff"
                 value={form.expense_staff}
                 onChange={handleInputChange}
+                onWheel={(e) => e.target.blur()} 
                 placeholder="₹"
                 className="flex-1 border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-red-500"
               />
@@ -910,6 +855,7 @@ setForm({
                 name="expense_enterprise"
                 value={form.expense_enterprise}
                 onChange={handleInputChange}
+                onWheel={(e) => e.target.blur()} 
                 placeholder="₹"
                 className="flex-1 border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-red-500"
               />
@@ -935,6 +881,7 @@ setForm({
                 name="expense_misc"
                 value={form.expense_misc}
                 onChange={handleInputChange}
+                onWheel={(e) => e.target.blur()} 
                 placeholder="₹"
                 className="flex-1 border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-red-500"
               />
@@ -961,6 +908,7 @@ setForm({
                 name="receive_amount"
                 value={form.receive_amount}
                 onChange={handleInputChange}
+                onWheel={(e) => e.target.blur()} 
                 placeholder="₹"
                 className="flex-1 border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-yellow-500"
               />
@@ -986,6 +934,7 @@ setForm({
                 name="give_amount"
                 value={form.give_amount}
                 onChange={handleInputChange}
+                onWheel={(e) => e.target.blur()} 
                 placeholder="₹"
                 className="flex-1 border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-yellow-500"
               />
